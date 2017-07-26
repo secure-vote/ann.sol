@@ -61,7 +61,7 @@ contract Announcement {
     }
 
     function addAnn (string ipfsHash) isOwner external {
-        require(ipfsHash != "");
+        require(bytes(ipfsHash).length > 0);
         msgQPut(ipfsHash);
     }
 
