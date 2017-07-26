@@ -18,6 +18,8 @@ contract Announcement {
 
     address public owner;
     mapping(address => bool) public auditors;
+    address[] public auditorsList;
+    uint256 public nAuditors;
     uint256 public nAuditorsRequired = 1;
     uint256 public nAuditorsAlarm = 1;
     uint256 public nAlarms = 0;
@@ -49,7 +51,9 @@ contract Announcement {
 
         for (uint256 i = 0; i < _auditors.length; i++) {
             auditors[_auditors[i]] = true;
+            auditorsList.push(_auditors[i]);
         }
+        nAuditors = _auditors.length;
 
         owner = msg.sender;
         nAuditorsRequired = _nAuditorsRequired;
@@ -57,6 +61,7 @@ contract Announcement {
     }
 
     function addAnn (string ipfsHash) isOwner external {
+        require(ipfsHash != "");
         msgQPut(ipfsHash);
     }
 
@@ -86,6 +91,7 @@ contract Announcement {
             // then remove msg from queue and add to messages
             addMsgFinal(msgWaiting.msg, msgWaitingN);
         } else if (msgWaiting.nAlarms >= nAuditorsAlarm) {
+            msgsWaitingDone[msgWaitingN] = true;
             alarmRaised[msgWaitingN] = true;
             alarms.push(msgWaitingN);
             nAlarms += 1;
@@ -107,4 +113,14 @@ contract Announcement {
         delete msgsWaiting[msgWaitingN];
     }
 
+    function getMsgWaiting(uint256 msgWaitingN) constant external returns (uint256, uint256, string, uint256, bool) {
+        MessageAwaitingAudit maa = msgsWaiting[msgWaitingN];
+        return (
+            maa.nAudits,
+            maa.nAlarms,
+            maa.msg.ipfsHash,
+            maa.msg.timestamp,
+            alarmRaised[msgWaitingN]
+        );
+    }
 }
